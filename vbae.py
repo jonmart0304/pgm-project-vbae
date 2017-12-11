@@ -19,20 +19,20 @@ def encode(encode_inputs):
 	W_conv1 = weight_variable([3, 3, 1, 64])
         b_conv1 = bias_variable([64])
         conv1 = conv2d(encode_inputs, W_conv1, 2)
-        bn_conv1 = tf.layers.batch_normalization(conv1)
-        h_conv1 = tf.nn.relu(bn_conv1 + b_conv1)
+        #bn_conv1 = tf.layers.batch_normalization(conv1)
+        h_conv1 = tf.nn.relu(conv1 + b_conv1)
 	
 	W_conv2 = weight_variable([2, 2, 64, 32])
 	b_conv2 = bias_variable([32])
 	conv2 = conv2d(h_conv1, W_conv2, 2)
-	bn_conv2 = tf.layers.batch_normalization(conv2)
-	h_conv2 = tf.nn.relu(bn_conv2 + b_conv2)
+	#bn_conv2 = tf.layers.batch_normalization(conv2)
+	h_conv2 = tf.nn.relu(conv2 + b_conv2)
 	
 	W_conv3 = weight_variable([3, 3, 32, 16])
 	b_conv3 = bias_variable([16])
 	conv3 = conv2d(h_conv2, W_conv3, 2)
-	bn_conv3 = tf.layers.batch_normalization(conv3)
-	h_conv3 = tf.nn.relu(bn_conv3 + b_conv3)
+	#bn_conv3 = tf.layers.batch_normalization(conv3)
+	h_conv3 = tf.nn.relu(conv3 + b_conv3)
 
 	h_conv3_flat = tf.reshape(h_conv3, [-1, 4 * 4 * 16])
 
@@ -40,13 +40,15 @@ def encode(encode_inputs):
 	b_fc1 = bias_variable([8])
 	fc1 = tf.nn.relu(tf.matmul(h_conv3_flat, W_fc1) + b_fc1)
 
+	
 	W_fc2 = weight_variable([8, 8])
 	b_fc2 = bias_variable([8])
 	encoded = tf.nn.relu(tf.matmul(fc1, W_fc2) + b_fc2)
-	
+		
+
 	return encoded
 
-def decode(decode_inputs):
+def decode(decode_inputs):	
 	W_fc1 = weight_variable([8, 8])
 	b_fc1 = bias_variable([8])
 	h_fc1 = tf.nn.relu(tf.matmul(decode_inputs, W_fc1) + b_fc1) 
@@ -67,9 +69,10 @@ def decode(decode_inputs):
 	logits = tf.layers.conv2d(inputs=conv6, filters=1, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
 	
 	decoded = tf.nn.sigmoid(logits)	
+	
 
 	return decoded, logits
-
+	
 
 def model(input_images):
 	encoded = encode(input_images)
@@ -117,12 +120,14 @@ def train(input_images):
 			step += 1
 
 			shuffle(input_images)
-			decoded = sess.run(logits, feed_dict={images_placeholder: input_images[:batch_size]})
-			print 'Step: ' + str(step)
+			_, loss_ = sess.run([opt, loss], feed_dict={images_placeholder: input_images[:batch_size]})
+			print 'Step: ' + str(step) + 'Loss: ' + str(loss_)
 			c = 0
 			if step%1000 == 0:
 				print('*****Saving model*****')
 				saver.save(sess, "checkpoint/checkpoint", global_step=global_step)
+				shuffle(input_images)
+				decoded = sess.run(logits, feed_dict={images_placeholder: input_images[:batch_size]})
 				# write evaluation code here
 				#compare input and output... display
 				for real, dec in zip(input_images[:batch_size], decoded):
